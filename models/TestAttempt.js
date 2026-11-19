@@ -120,6 +120,26 @@ const TestAttemptSchema = new mongoose.Schema(
       }
     ],
 
+    regradeHistory: [
+      {
+        regradedAt: { type: Date, default: Date.now },
+        adminId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+        questionCode: String,
+        reason: String,
+        previousScore: Number,
+        newScore: Number,
+        previousCorrectCount: Number,
+        newCorrectCount: Number,
+        previousWrongCount: Number,
+        newWrongCount: Number,
+        previousAccuracy: Number,
+        newAccuracy: Number,
+        previousPercentage: Number,
+        newPercentage: Number
+      }
+    ],
+
     status: {
       type: String,
       enum: ["IN_PROGRESS", "SUBMITTED"],

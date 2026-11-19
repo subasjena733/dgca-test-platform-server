@@ -22,6 +22,7 @@ const QuestionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  imageUrl: { type: String, trim: true, maxlength: 2048, default: "" },
   options: [
     {
       label: String,
@@ -33,6 +34,8 @@ const QuestionSchema = new mongoose.Schema({
     required: true
   },
   explanation: String,
+  explanationImageUrl: { type: String, trim: true, maxlength: 2048, default: "" },
+  solutionVideoUrl: { type: String, trim: true, maxlength: 2048, default: "" },
   marks: {
     type: Number,
     default: 1

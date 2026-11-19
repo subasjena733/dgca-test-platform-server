@@ -80,6 +80,7 @@ const startPremiumMockSession = async (req, res) => {
       topic: q.topic,
       difficulty: q.difficulty,
       questionText: q.questionText,
+      imageUrl: q.imageUrl || "",
       options: q.options
     }));
 
@@ -343,7 +344,9 @@ const getAttemptReview = async (req, res) => {
       attempt = await TestAttempt.findOne({
         _id: attemptId,
         status: "SUBMITTED"
-      }).populate("userId", "name email");
+      })
+        .populate("userId", "name email")
+        .populate("regradeHistory.adminId", "name email");
     } else {
       attempt = await TestAttempt.findOne({
         _id: attemptId,
@@ -358,9 +361,15 @@ const getAttemptReview = async (req, res) => {
       });
     }
 
-    const questions = await Question.find({
+    const fetchedQuestions = await Question.find({
       _id: { $in: attempt.questions }
     });
+    const questionsById = new Map(
+      fetchedQuestions.map(question => [question._id.toString(), question])
+    );
+    const questions = attempt.questions
+      .map(questionId => questionsById.get(questionId.toString()))
+      .filter(Boolean);
 
     const review = questions.map(question => {
       const answer = attempt.answers.find(
@@ -389,6 +398,7 @@ const getAttemptReview = async (req, res) => {
         topic: question.topic,
         difficulty: question.difficulty,
         questionText: question.questionText,
+        imageUrl: question.imageUrl || "",
         options: question.options,
         selectedOption,
         correctOption: question.correctOption,
@@ -396,7 +406,9 @@ const getAttemptReview = async (req, res) => {
         timeSpent,
         marks: question.marks || 1,
         negativeMarks: question.negativeMarks || 0,
-        explanation: question.explanation || null
+        explanation: question.explanation || null,
+        explanationImageUrl: question.explanationImageUrl || "",
+        solutionVideoUrl: question.solutionVideoUrl || ""
       };
     });
 
@@ -406,6 +418,7 @@ const getAttemptReview = async (req, res) => {
       candidateEmail: attempt.userId.email,
       mockTestTitle: attempt.mockTestTitle,
       totalTimeSpent: attempt.totalTimeSpent,
+      ...(req.user.role === "admin" ? { regradeHistory: attempt.regradeHistory } : {}),
       review
     });
 
@@ -509,6 +522,7 @@ const resumePremiumMockSession = async (req, res) => {
       topic: q.topic,
       difficulty: q.difficulty,
       questionText: q.questionText,
+      imageUrl: q.imageUrl || "",
       options: q.options
     }));
 
