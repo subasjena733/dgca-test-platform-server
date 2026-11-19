@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const MockTest = require("../models/MockTest");
 const TestAttempt = require("../models/TestAttempt");
+const mongoose = require("mongoose");
 
 const getAdminAnalytics = async (req, res) => {
   try {
@@ -131,6 +132,89 @@ const getAdminAnalytics = async (req, res) => {
   }
 };
 
+const getAdminStudents = async (req, res) => {
+  try {
+    const search = String(req.query.search || "").trim();
+    const premium = req.query.premium;
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 25, 1), 100);
+    const filter = { role: "student" };
+
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: { $regex: escapedSearch, $options: "i" } },
+        { email: { $regex: escapedSearch, $options: "i" } }
+      ];
+    }
+    if (premium === "true" || premium === "false") {
+      filter.isPremium = premium === "true";
+    }
+
+    const [students, total] = await Promise.all([
+      User.find(filter)
+        .select("name email isPremium createdAt")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter)
+    ]);
+
+    return res.status(200).json({ students, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getAdminStudentDetails = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.studentId)) {
+      return res.status(400).json({ message: "Invalid student ID." });
+    }
+
+    const student = await User.findOne({ _id: req.params.studentId, role: "student" })
+      .select("name email isPremium createdAt")
+      .lean();
+    if (!student) return res.status(404).json({ message: "Student not found." });
+
+    const attempts = await TestAttempt.find({ userId: student._id, status: "SUBMITTED" })
+      .select("mockTestId mockTestTitle score correctCount wrongCount unattemptedCount accuracy percentage totalTimeSpent submittedAt")
+      .sort({ submittedAt: -1 })
+      .limit(50)
+      .lean();
+
+    return res.status(200).json({ student, attempts });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const updateStudentPremiumStatus = async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.studentId)) {
+      return res.status(400).json({ message: "Invalid student ID." });
+    }
+    if (typeof req.body.isPremium !== "boolean") {
+      return res.status(400).json({ message: "isPremium must be true or false." });
+    }
+
+    const student = await User.findOneAndUpdate(
+      { _id: req.params.studentId, role: "student" },
+      { $set: { isPremium: req.body.isPremium } },
+      { new: true, runValidators: true }
+    ).select("name email isPremium createdAt");
+
+    if (!student) return res.status(404).json({ message: "Student not found." });
+    return res.status(200).json({ message: "Student premium access updated.", student });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
-  getAdminAnalytics
+  getAdminAnalytics,
+  getAdminStudents,
+  getAdminStudentDetails,
+  updateStudentPremiumStatus
 };

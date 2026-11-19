@@ -3,12 +3,20 @@ const router = express.Router();
 
 const { protect } = require("../middleware/authMiddleware");
 const { adminOnly } = require("../middleware/roleMiddleware");
-const { getAdminAnalytics } = require("../controllers/adminController");
+const {
+  getAdminAnalytics,
+  getAdminStudents,
+  getAdminStudentDetails,
+  updateStudentPremiumStatus
+} = require("../controllers/adminController");
 const { getPendingRegistrations, approveRegistration, rejectRegistration, 
      getPasswordResetRequests, rejectPasswordReset,resetPasswordByAdmin
 } = require("../controllers/authController");
 
 router.get("/analytics", protect, adminOnly, getAdminAnalytics);
+router.get("/students", protect, adminOnly, getAdminStudents);
+router.get("/students/:studentId", protect, adminOnly, getAdminStudentDetails);
+router.patch("/students/:studentId/premium", protect, adminOnly, updateStudentPremiumStatus);
 router.get("/pending-registrations", protect,adminOnly, getPendingRegistrations);
 router.post("/approve-registration/:requestId",protect,adminOnly, approveRegistration);
 router.delete("/reject-registration/:requestId", protect, adminOnly, rejectRegistration);
