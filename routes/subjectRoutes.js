@@ -11,12 +11,7 @@ const {
 } = require("../controllers/subjectController");
 
 
-router.get(
-  "/",
-  protect,
-  adminOnly,
-  getSubjects
-);
+router.get("/", protect, getSubjects);
 
 router.post(
   "/",

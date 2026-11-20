@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
+const lessonRoutes = require("./routes/lessonRoutes");
 
 const app = express();
 // Middleware
@@ -27,6 +28,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/subjects", subjectRoutes);
+app.use("/api/lessons", lessonRoutes);
 
 // Test Route
 app.get("/", (req, res) => {
